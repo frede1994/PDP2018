@@ -17,63 +17,56 @@ uint8_t LDR = A0; //pin with LDR sensor which senses the intensitivity of the su
 
 //the setup function runs once upon start
 void setup() {
-  Serial.begin(9600);
+	Serial.begin(9600);
 
-  //setup LED and LDR-sensor
-  pinMode(resultLED, OUTPUT);
-  pinMode(LDR, INPUT);
+	//setup LED and LDR-sensor
+	pinMode(resultLED, OUTPUT);
+	pinMode(LDR, INPUT);
 
-  //connect to WiFi
-  WiFi.begin(WiFiUser, WiFiPass);
-  Serial.print("connecting");
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println();
-  Serial.print("connected");
-  Serial.print(WiFi.localIP());
+	//connect to WiFi
+	WiFi.begin(WiFiUser, WiFiPass);
+	Serial.print("connecting");
+	while (WiFi.status() != WL_CONNECTED) {
+		Serial.print(".");
+		delay(500);
+	}
+	Serial.println();
+	Serial.print("connected");
+	Serial.print(WiFi.localIP());
 
-  //begin Firebase
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+	//begin Firebase
+	Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
 }
 
 //the loop function runs over and over again until power down or reset
 void loop() {
-  //get value from database, switch LED based on this
-  int value = Firebase.getInt("LED");
-  switchLED(value);
+	//get boolean from database, switch LED based on this
+	bool on = Firebase.getBool("LED");
+	if (on) {
+		digitalWrite(resultLED, HIGH);
+	}
+	else {
+		digitalWrite(resultLED, LOW);
+	}
 
-  //read light intensitivity from LDR
-  int lightValue = analogRead(LDR);
-  Serial.println(lightValue);
+	//read light intensitivity from LDR
+	int lightValue = analogRead(LDR);
+	Serial.println(lightValue);
+	//put lightValue into database
+	updateDatabase(lightValue);
 
-  //put lightValue into database
-  updateDatabase(lightValue);
-
-  //delay to reduce calls over the network
-  delay(1000);
+	//delay to reduce calls over the network
+	delay(1000);
 }
-
-//turns LED on/off depending on brightness
-void switchLED(int value) {
-  if (value > 400) {
-    digitalWrite(resultLED, HIGH);
-  }
-  else {
-    digitalWrite(resultLED, LOW);
-  }
-}
-
 
 //updates database with a value
 void updateDatabase(int value) {
-  Firebase.setInt("LED", value);
-  if (Firebase.failed()) { //handle error
-    Serial.println("Failed setting value");
-    Serial.println(Firebase.error()); //get error info
-  }
-  else {
-    Serial.println("Success setting value");
-  }
+	Firebase.setInt("LDR-sensor", value);
+	if (Firebase.failed()) { //handle error
+		Serial.println("Failed setting value");
+		Serial.println(Firebase.error()); //get error info
+	}
+	else {
+		Serial.println("Success setting value");
+	}
 }
